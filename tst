@@ -17,6 +17,8 @@ function log {
 	fi
 }
 
+RESULTS=./results
+
 while [ "$1" ]; do
 	case "$1" in
 		g|goto)	
@@ -57,7 +59,6 @@ if [ ! -d tests ]; then
 fi
 TESTS=`readlink -f ./tests`
 TESTS_ROOT=`readlink -f .`
-RESULTS=./results
 
 if [ -e $RESULTS ]; then
 	OLD_RESULTS=$RESULTS-`cat $RESULTS/timestamp`
