@@ -8,16 +8,16 @@ RESULTS=./results
 
 function error {
 	if [ -e "$RESULTS" ]; then
-		echo $* | tee -a $RESULTS/log 1>&2
-	else
-		echo $* 1>&2
+		echo $* >>$RESULTS/log
 	fi
+	echo "	$*" 1>&2
 	exit 1
 }
 
 function log {
+	echo $* >>$RESULTS/log
 	if [ "$VERBOSE" ]; then
-		echo $* | tee -a $RESULTS/log
+		echo "	$*"
 	fi
 }
 
