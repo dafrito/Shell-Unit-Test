@@ -19,6 +19,16 @@ function log {
 
 while [ "$1" ]; do
 	case "$1" in
+		g|goto)	
+			while [ ! -d "tests" ]; do
+				if [ `pwd` = "/" ]; then
+					exit 1
+				fi
+				cd ..
+			done
+			pwd
+			exit
+			;;
 		c|clean)	
 			if [ -n "$RESULTS" ]; then
 				rm -rf  $RESULTS
