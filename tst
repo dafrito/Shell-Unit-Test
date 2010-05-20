@@ -58,41 +58,35 @@ mkdir -p $RESULTS
 touch $RESULTS/log
 date +%Y.%m.%d-%H.%M.%S >$RESULTS/timestamp
 
-function run_test {
-	$TEST_ROOT/test
-	RESULT=$?
-}
-
 for i in `find tests -type f ! -name '.*'`; do
 	let total++
 	log "$total. $i"
-	TEST_ROOT=$RESULTS/$total
-	mkdir -p $TEST_ROOT
-	WORK=`readlink -f $TEST_ROOT`/work
-	cat >$TEST_ROOT/test <<EOF
+	mkdir -p $RESULTS/$total
+	TEST=`readlink -f $i`
+	pushd $RESULTS/$total >/dev/null
+	cat >test <<EOF
 #!/bin/bash
 PATH=/bin:/usr/bin:$TESTS_ROOT
 
-source $TST_PATH/library.sh
-if [ -e "$WORK" ]; then
-	mv "$WORK" "$WORK".\`find * -maxdepth 0 -name '$WORK*' | wc -l\`
-fi
-mkdir -p "$WORK"
-cd "$WORK"
-if [ -e "$TESTS/.setup" ]; then
-	source $TESTS/.setup
-fi
-source `readlink -f $i`
-RESULT=\$?
-if [ -e "$TESTS/.teardown" ]; then
-	source $TESTS/.teardown
-fi
+ROOT=$TESTS
 
-exit $RESULT
+source $TST_PATH/library.sh
+if [ -e work ]; then
+	mv work work-\`find * -maxdepth 0 -name 'work*' | wc -l\`
+fi
+mkdir -p work
+
+cd work
+[ -e "\$ROOT/.setup" ] && source \$ROOT/.setup
+source $TEST
+RESULT=\$?
+[ -e "\$ROOT/.teardown" ] && source \$ROOT/.teardown
+
+exit \$RESULT
 EOF
-	chmod +x $TEST_ROOT/test
-	run_test 2>$TEST_ROOT/err 1>$TEST_ROOT/out
-	if [ "$RESULT" = 0 ] && [ ! -s $TEST_ROOT/err ]; then
+	chmod +x test
+	./test 2>err 1>out
+	if [ "$RESULT" = 0 ] && [ ! -s err ]; then
 		let success++
 	else
 		RESULT=1
@@ -101,14 +95,15 @@ EOF
 	if [ "$RESULT" != 0 ]; then
 		echo "$total. ${i#*/} failed" 1>&2
 	fi
-	if [ -s $TEST_ROOT/err ]; then
-		cat $TEST_ROOT/err | sed "s/^/	/g";
+	if [ -s err ]; then
+		cat err | sed "s/^/	/g";
 	fi
 	if [ "$VERBOSE" ]; then
-		cat $TEST_ROOT/out | set "s/^/	/g";
+		cat out | set "s/^/	/g";
 	fi
+	popd >/dev/null
 	if [ "$RESULT" = 0 ] && [ ! "$KEEP" ]; then
-		rm -rf $TEST_ROOT
+		rm -rf $RESULTS/$total
 	fi
 done
 
