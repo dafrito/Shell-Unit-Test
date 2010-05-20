@@ -129,7 +129,7 @@ if [ $failed -gt 0 ]; then
 	error "$failed of $total test(s) failed";
 else 
 	log "All $total tests were successful";
-	if [ ! $KEEP ] && [ ! -e "$RESULTS/older" ]; then
+	if [ ! "$KEEP" ] && [ ! -e "$RESULTS/older" ]; then
 		rm -rf $RESULTS
 	fi
 	exit 0
