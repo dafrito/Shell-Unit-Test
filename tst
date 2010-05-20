@@ -1,25 +1,31 @@
 #!/bin/bash
-PATH=/bin:/usr/bin:$HOME/bin
+TST_PATH=${0%/*}
+PATH=/bin:/usr/bin:$TST_PATH
 
-TESTS=./tests
-TST_ROOT=./result
+TESTS=`readlink -f ./tests`
+TESTS_ROOT=`readlink -f .`
+RESULTS=./results
 
 function error {
-	echo $* | tee -a $TST_ROOT/log 1>&2
+	if [ -e "$RESULTS" ]; then
+		echo $* | tee -a $RESULTS/log 1>&2
+	else
+		echo $* 1>&2
+	fi
 	exit 1
 }
 
 function log {
 	if [ "$VERBOSE" ]; then
-		echo $* | tee -a $TST_ROOT/log
+		echo $* | tee -a $RESULTS/log
 	fi
 }
 
 while [ "$1" ]; do
 	case "$1" in
 		c|clean)	
-			if [ -n "$TST_ROOT" ]; then
-				rm -rf  $TST_ROOT*
+			if [ -n "$RESULTS" ]; then
+				rm -rf  $RESULTS
 			fi
 			exit
 			;;
@@ -35,66 +41,83 @@ total=0
 success=0
 failed=0
 
-if [ -e $TST_ROOT ]; then
-	mv $TST_ROOT $TST_ROOT-`cat $TST_ROOT/timestamp`
-fi
-mkdir -p $TST_ROOT
-touch $TST_ROOT/log
-
 [ -d tests ] || error "no tests found";
+
+if [ -e $RESULTS ]; then
+	OLD_RESULTS=$RESULTS-`cat $RESULTS/timestamp`
+	mv $RESULTS $OLD_RESULTS
+	mkdir -p $RESULTS
+	if [ -d $OLD_RESULTS/older ]; then
+		mv $OLD_RESULTS/older $RESULTS
+	else
+		mkdir $RESULTS/older
+	fi
+	mv $OLD_RESULTS $RESULTS/older
+fi
+mkdir -p $RESULTS
+touch $RESULTS/log
+date +%Y.%m.%d-%H.%M.%S >$RESULTS/timestamp
 
 function run_test {
 	$TEST_ROOT/test
 	RESULT=$?
 }
 
-date +%Y.%m.%d-%H.%M.%S >$TST_ROOT/timestamp
 for i in `find tests -type f ! -name '.*'`; do
 	let total++
-	log "[tst] $total. $i"
-	TEST_ROOT=$TST_ROOT/$total
-	WORK=$TEST_ROOT/work
-	OUTPUT=$TEST_ROOT/output
+	log "$total. $i"
+	TEST_ROOT=$RESULTS/$total
 	mkdir -p $TEST_ROOT
+	WORK=`readlink -f $TEST_ROOT`/work
 	cat >$TEST_ROOT/test <<EOF
-source ${0%/*}/tst-lib.sh
-mkdir -p `readlink -f $WORK`
-cd `readlink -f $WORK`
-if [ -e "`readlink -f $TESTS/.setup`" ]; then
-	source `readlink -f $TESTS/.setup`
+#!/bin/bash
+PATH=/bin:/usr/bin:$TESTS_ROOT
+
+source $TST_PATH/library.sh
+if [ -e "$WORK" ]; then
+	mv "$WORK" "$WORK".\`find * -maxdepth 0 -name '$WORK*' | wc -l\`
+fi
+mkdir -p "$WORK"
+cd "$WORK"
+if [ -e "$TESTS/.setup" ]; then
+	source $TESTS/.setup
 fi
 source `readlink -f $i`
 RESULT=\$?
-if [ -e "`readlink -f $TESTS/.teardown`" ]; then
-	source `readlink -f $TESTS/.teardown`
+if [ -e "$TESTS/.teardown" ]; then
+	source $TESTS/.teardown
 fi
+
 exit $RESULT
 EOF
 	chmod +x $TEST_ROOT/test
-	if [ $VERBOSE ]; then
-		run_test | tee $OUTPUT
-	else
-		run_test >$OUTPUT
-	fi
-	if [ "$RESULT" = 0 ]; then
+	run_test 2>$TEST_ROOT/err 1>$TEST_ROOT/out
+	if [ "$RESULT" = 0 ] && [ ! -s $TEST_ROOT/err ]; then
 		let success++
-		if [ ! "$KEEP" ]; then
-			rm -rf $TEST_ROOT
-		fi
 	else
+		RESULT=1
 		let failed++
-		echo "[FAIL] $i"
-		cat $OUTPUT
+	fi
+	if [ "$RESULT" != 0 ]; then
+		echo "$total. ${i#*/} failed" 1>&2
+	fi
+	if [ -s $TEST_ROOT/err ]; then
+		cat $TEST_ROOT/err | sed "s/^/	/g";
+	fi
+	if [ "$VERBOSE" ]; then
+		cat $TEST_ROOT/out | set "s/^/	/g";
+	fi
+	if [ "$RESULT" = 0 ] && [ ! "$KEEP" ]; then
+		rm -rf $TEST_ROOT
 	fi
 done
 
 if [ $failed -gt 0 ]; then
-	log "$failed of $total failed test(s)";
-	exit 1
+	error "$failed of $total test(s) failed";
 else 
 	log "All $total tests were successful";
-	if [ ! $KEEP ]; then
-		rm -rf $TST_ROOT
+	if [ ! $KEEP ] && [ ! -e "$RESULTS/older" ]; then
+		rm -rf $RESULTS
 	fi
 	exit 0
 fi
