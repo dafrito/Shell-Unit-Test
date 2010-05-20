@@ -13,7 +13,7 @@ function error {
 function log {
 	echo $* >>$RESULTS/log
 	if [ "$VERBOSE" ]; then
-		echo "	$*"
+		echo "$*"
 	fi
 }
 
