@@ -2,10 +2,6 @@
 TST_PATH=${0%/*}
 PATH=/bin:/usr/bin:$TST_PATH
 
-TESTS=`readlink -f ./tests`
-TESTS_ROOT=`readlink -f .`
-RESULTS=./results
-
 function error {
 	if [ -e "$RESULTS" ]; then
 		echo $* >>$RESULTS/log
@@ -41,7 +37,17 @@ total=0
 success=0
 failed=0
 
-[ -d tests ] || error "no tests found";
+if [ ! -d tests ]; then
+	if [ -d ../tests ]; then
+		# It's common that we're working in ./tests, so we support this one case.
+		cd ..
+	else
+		error "no tests found";
+	fi
+fi
+TESTS=`readlink -f ./tests`
+TESTS_ROOT=`readlink -f .`
+RESULTS=./results
 
 if [ -e $RESULTS ]; then
 	OLD_RESULTS=$RESULTS-`cat $RESULTS/timestamp`
