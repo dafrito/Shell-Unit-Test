@@ -62,23 +62,21 @@ for i in `find tests -type f ! -name '.*'`; do
 	let total++
 	log "$total. $i"
 	mkdir -p $RESULTS/$total
-	TEST=`readlink -f $i`
 	pushd $RESULTS/$total >/dev/null
 	cat >test <<EOF
 #!/bin/bash
 PATH=/bin:/usr/bin:$TESTS_ROOT
-
-ROOT=$TESTS
-
 source $TST_PATH/library.sh
+
 if [ -e work ]; then
 	mv work work-\`find * -maxdepth 0 -name 'work*' | wc -l\`
 fi
 mkdir -p work
-
 cd work
+
+ROOT=$TESTS
 [ -e "\$ROOT/.setup" ] && source \$ROOT/.setup
-source $TEST
+source \$ROOT/../$i
 RESULT=\$?
 [ -e "\$ROOT/.teardown" ] && source \$ROOT/.teardown
 
