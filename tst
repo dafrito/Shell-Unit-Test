@@ -84,13 +84,16 @@ exit \$RESULT
 EOF
 	chmod +x test
 	./test 2>err 1>out
-	if [ "$RESULT" = 0 ] && [ ! -s err ]; then
+	R=$?
+	if [ "$R" = 0 ] && [ ! -s err ]; then
 		let success++
 	else
-		RESULT=1
+		if [ ! "$R" ]; then
+			R=1;
+		fi
 		let failed++
 	fi
-	if [ "$RESULT" != 0 ]; then
+	if [ "$R" != 0 ]; then
 		echo "$total. ${i#*/} failed" 1>&2
 	fi
 	if [ -s err ]; then
@@ -100,7 +103,7 @@ EOF
 		cat out | set "s/^/	/g";
 	fi
 	popd >/dev/null
-	if [ "$RESULT" = 0 ] && [ ! "$KEEP" ]; then
+	if [ "$R" = 0 ] && [ ! "$KEEP" ]; then
 		rm -rf $RESULTS/$total
 	fi
 done
