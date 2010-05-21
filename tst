@@ -1,6 +1,9 @@
 #!/bin/bash
-TST_PATH=${0%/*}
-PATH=/bin:/usr/bin:$TST_PATH
+if [ ! "$TST_ROOT" ]; then
+	echo "TST_ROOT must be defined" 1>&2
+	exit 1
+fi
+PATH=/bin:/usr/bin:$TST_ROOT
 
 function error {
 	if [ -e "$RESULTS" ]; then
@@ -83,7 +86,7 @@ for i in `find tests -type f ! -name '.*'`; do
 	cat >test <<EOF
 #!/bin/bash
 PATH=/bin:/usr/bin:$TESTS_ROOT
-source $TST_PATH/library.sh
+source $TST_ROOT/library.sh
 
 if [ -e work ]; then
 	mv work work-\`find * -maxdepth 0 -name 'work*' | wc -l\`
