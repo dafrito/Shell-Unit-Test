@@ -1,24 +1,9 @@
 #!/bin/bash
-if [ ! "$TST_ROOT" ]; then
-	echo "TST_ROOT must be defined" 1>&2
-	exit 1
+if [ ! "$TST_EXECUTABLE_DIR" ]; then
+	TST_EXECUTABLE_DIR=${0%/*}
 fi
-PATH=/bin:/usr/bin:$TST_ROOT
-
-function error {
-	if [ -e "$RESULTS" ]; then
-		echo $* >>$RESULTS/log
-	fi
-	echo "	$*" 1>&2
-	exit 1
-}
-
-function log {
-	echo $* >>$RESULTS/log
-	if [ "$VERBOSE" ]; then
-		echo "$*"
-	fi
-}
+source "$TST_EXECUTABLE_DIR/library.sh" || exit 1
+PATH=/bin:/usr/bin
 
 RESULTS=./results
 
@@ -42,15 +27,10 @@ while [ "$1" ]; do
 			;;
 		-k)	KEEP=true ;;
 		-v)	VERBOSE=true ;;
-		-*)
-			error "Unsupported option: $1"
+		-*) error "Unsupported option: $1" ;;
 	esac
 	shift
 done
-
-total=0
-success=0
-failed=0
 
 if [ ! -d tests ]; then
 	if [ -d ../tests ]; then
@@ -60,50 +40,40 @@ if [ ! -d tests ]; then
 		error "no tests found";
 	fi
 fi
-TESTS=`readlink -f ./tests`
-TESTS_ROOT=`readlink -f .`
+TESTS_ROOT=`pwd`
+TESTS=`pwd`/tests
 
 if [ -e $RESULTS ]; then
-	OLD_RESULTS=$RESULTS-`cat $RESULTS/timestamp`
-	mv $RESULTS $OLD_RESULTS
+	OLD=$RESULTS-`cat $RESULTS/timestamp`
+	mv $RESULTS $OLD
 	mkdir -p $RESULTS
-	if [ -d $OLD_RESULTS/older ]; then
-		mv $OLD_RESULTS/older $RESULTS
+	if [ -d $OLD/older ]; then
+		mv $OLD/older $RESULTS
 	else
 		mkdir $RESULTS/older
 	fi
-	mv $OLD_RESULTS $RESULTS/older
+	mv $OLD $RESULTS/older
 fi
+
 mkdir -p $RESULTS
 touch $RESULTS/log
 date +%Y.%m.%d-%H.%M.%S >$RESULTS/timestamp
 
-for i in `find tests -type f ! -name '.*'`; do
+total=0
+success=0
+failed=0
+for current_test in `find tests -type f ! -name '.*'`; do
 	let total++
-	log "$total. $i"
+	log "$total. $current_test"
 	mkdir -p $RESULTS/$total
 	pushd $RESULTS/$total >/dev/null
-	cat >test <<EOF
+	cat >run <<EOF
 #!/bin/bash
-PATH=/bin:/usr/bin:$TESTS_ROOT
-source $TST_ROOT/library.sh
-
-if [ -e work ]; then
-	mv work work-\`find * -maxdepth 0 -name 'work*' | wc -l\`
-fi
-mkdir -p work
-cd work
-
-ROOT=$TESTS
-[ -e "\$ROOT/.setup" ] && source \$ROOT/.setup
-source \$ROOT/../$i
-RESULT=\$?
-[ -e "\$ROOT/.teardown" ] && source \$ROOT/.teardown
-
-exit \$RESULT
+TST_EXECUTABLE_DIR="$TST_EXECUTABLE_DIR"
+\$TST_EXECUTABLE_DIR/run-one-test.sh "$TESTS_ROOT/$current_test"
 EOF
-	chmod +x test
-	./test 2>err 1>out
+	chmod +x run
+	./run 2>err 1>out
 	R=$?
 	if [ "$R" = 0 ] && [ ! -s err ]; then
 		let success++
@@ -114,7 +84,7 @@ EOF
 		let failed++
 	fi
 	if [ "$R" != 0 ]; then
-		echo "$total. ${i#*/} failed" 1>&2
+		echo "$total. ${current_test#*/} failed" 1>&2
 	fi
 	if [ -s err ]; then
 		cat err | sed "s/^/	/g";

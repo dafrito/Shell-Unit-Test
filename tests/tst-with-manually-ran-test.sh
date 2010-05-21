@@ -6,8 +6,8 @@ EOF
 
 tst -k
 cd results/1/
-[ -f test ] || die "test must be created";
+[ -f run ] || die "test must be created";
 
-./test || die "Test must actually work";
+./run || die "Test must actually work";
 
-equals "Output" `./test` "Test outputs properly, without any redirection";
+equals "Output" `./run` "Test outputs properly, without any redirection";
