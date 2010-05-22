@@ -1,9 +1,9 @@
 #!/bin/bash
+PATH=/bin:/usr/bin
 if [ ! "$TST_EXECUTABLE_DIR" ]; then
 	TST_EXECUTABLE_DIR=${0%/*}
 fi
 source "$TST_EXECUTABLE_DIR/library.sh" || exit 1
-PATH=/bin:/usr/bin
 
 RESULTS=results
 
