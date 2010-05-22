@@ -5,7 +5,7 @@ fi
 source "$TST_EXECUTABLE_DIR/library.sh" || exit 1
 PATH=/bin:/usr/bin
 
-RESULTS=./results
+RESULTS=results
 
 while [ "$1" ]; do
 	case "$1" in
@@ -44,7 +44,7 @@ TESTS_ROOT=`pwd`
 TESTS=`pwd`/tests
 
 if [ -e $RESULTS ]; then
-	OLD=$RESULTS-`cat $RESULTS/timestamp`
+	OLD=$RESULTS-old
 	mv $RESULTS $OLD
 	mkdir -p $RESULTS
 	if [ -d $OLD/older ]; then
@@ -52,7 +52,8 @@ if [ -e $RESULTS ]; then
 	else
 		mkdir $RESULTS/older
 	fi
-	mv $OLD $RESULTS/older
+	let C=1+`ls -d "$RESULTS/older/*" | wc -l`
+	mv $RESULTS-old $RESULTS/older/$RESULTS-$C-`cat $RESULTS-old/timestamp`
 fi
 
 mkdir -p $RESULTS
