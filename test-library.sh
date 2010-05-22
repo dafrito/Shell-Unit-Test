@@ -16,7 +16,7 @@ function equals {
 	if [ "$expected" = "$actual" ]; then
 		return 0
 	fi
-	ERR="Unequal values: Expected '$1', got '$2'"
+	ERR="Unequal values: Expected '$expected', got '$actual'"
 	return 1
 }
 
