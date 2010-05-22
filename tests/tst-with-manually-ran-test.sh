@@ -10,4 +10,4 @@ cd results/1-always-true/
 
 ./run || die "Test must actually work";
 
-equals "Output" `./run` "Test outputs properly, without any redirection";
+equals "Output" `./run` || die "Test outputs properly, without any redirection";

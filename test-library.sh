@@ -1,26 +1,30 @@
 #!/bin/bash
 
 function die {
+	if [ -n "$ERR" ]; then
+		echo "[ERR] $ERR" 1>&2
+	fi
 	echo "[DIE] $*" 1>&2
 	exit 1
 }
 
 function equals {
-	if [ "$1" = "$2" ]; then
-		return 0;
+	unset ERR
+	expected=$1
+	shift
+	actual=$*
+	if [ "$expected" = "$actual" ]; then
+		return 0
 	fi
-	ERR="[tst] Unequal values: Expected '$1', got '$2'"
-	if [ "$3" ]; then
-		shift 2
-		ERR="$ERR for assertion '$*'"
-	fi
-	die $ERR
+	ERR="Unequal values: Expected '$1', got '$2'"
+	return 1
 }
 
 function expect {
-	MSG=$1
-	shift
+	unset ERR
 	if $* 2>&1; then
-		die "[tst] Expected failure, but got success. Assertion '$MSG'"
+		ERR="Expected failure, but got success."
+		return 1
 	fi
+	return 0
 }
