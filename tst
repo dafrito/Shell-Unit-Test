@@ -43,10 +43,11 @@ if [ -e $RESULTS ]; then
 	mkdir -p $RESULTS
 	if [ -d $OLD/older ]; then
 		mv $OLD/older $RESULTS
+		let C=1+`ls -d "$RESULTS"/older/* | wc -l`
 	else
 		mkdir $RESULTS/older
+		C=1
 	fi
-	let C=1+`ls -d "$RESULTS/older/*" | wc -l`
 	mv $RESULTS-old $RESULTS/older/$RESULTS-$C-`cat $RESULTS-old/timestamp`
 fi
 
