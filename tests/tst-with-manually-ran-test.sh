@@ -5,7 +5,7 @@ true
 EOF
 
 tst -k
-cd results/1/
+cd results/1-always-true/
 [ -f run ] || die "test must be created";
 
 ./run || die "Test must actually work";

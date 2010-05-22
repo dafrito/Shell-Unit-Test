@@ -5,4 +5,4 @@ EOF
 
 tst -k
 [ -e results ] || die "tst must respect -k and keep tests";
-[ -e results/1 ] || die "tst must respect -k and keep even passing tests";
+[ -e results/1-always-passing ] || die "tst must respect -k and keep even passing tests";

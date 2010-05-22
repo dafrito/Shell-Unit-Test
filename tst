@@ -66,8 +66,12 @@ failed=0
 for current_test in `find tests -type f ! -name '.*'`; do
 	let total++
 	log "$total. $current_test"
-	mkdir -p $RESULTS/$total
-	pushd $RESULTS/$total >/dev/null
+	TEST_NAME=${current_test##*/}
+	TEST_NAME=${TEST_NAME%.*}
+	RESULT_DIR="$RESULTS/$total-$TEST_NAME"
+	RESULT_DIR="$RESULTS/$total-$TEST_NAME"
+	mkdir -p "$RESULT_DIR"
+	pushd "$RESULT_DIR" >/dev/null
 	cat >run <<EOF
 #!/bin/bash
 TST_EXECUTABLE_DIR="$TST_EXECUTABLE_DIR"
@@ -95,7 +99,7 @@ EOF
 	fi
 	popd >/dev/null
 	if [ "$R" = 0 ] && [ ! "$KEEP" ]; then
-		rm -rf $RESULTS/$total
+		rm -rf "$RESULT_DIR"
 	fi
 done
 
