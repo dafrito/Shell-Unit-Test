@@ -14,3 +14,15 @@ function log {
 		echo "$*"
 	fi
 }
+
+function assert_tests {
+	if [ ! -d tests ]; then
+		if [ -d ../tests ]; then
+			# It's common that we're working in ./tests, so we support this one case.
+			cd ..
+		else
+			error "no tests found";
+		fi
+	fi
+}
+

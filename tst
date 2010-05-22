@@ -20,6 +20,7 @@ while [ "$1" ]; do
 			exit
 			;;
 		c|clean)	
+			assert_tests
 			if [ -n "$RESULTS" ]; then
 				rm -rf  $RESULTS
 			fi
@@ -32,14 +33,7 @@ while [ "$1" ]; do
 	shift
 done
 
-if [ ! -d tests ]; then
-	if [ -d ../tests ]; then
-		# It's common that we're working in ./tests, so we support this one case.
-		cd ..
-	else
-		error "no tests found";
-	fi
-fi
+assert_tests
 TESTS_ROOT=`pwd`
 TESTS=`pwd`/tests
 
